@@ -43,8 +43,18 @@ module ActiveRecord #:nodoc:
           foreign_keys(tbl, stream)
         end
 
+        # add views in local schema
+        views(stream)
         # add synonyms in local schema
         synonyms(stream)
+      end
+
+      def views(stream)
+        @connection.select_all("select view_name, text from user_views").each do |view|
+          stream.print "execute(<<-SQL)\n"
+          stream.print "CREATE OR REPLACE VIEW #{view['view_name']} AS\n #{view['text']}\n"
+          stream.print "SQL\n\n"
+        end
       end
 
       def primary_key_trigger(table_name, stream)
